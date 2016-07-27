@@ -1,0 +1,160 @@
+\pgfdeclarelayer{neuronbackbackground}%
+\pgfdeclarelayer{singleneuronforeground}%
+\pgfdeclarelayer{singleneuronbackground}%
+\pgfdeclarelayer{neuronbackground}%
+\pgfdeclarelayer{neuronforeground}%
+\pgfdeclarelayer{neuronforeforeground}%
+\pgfsetlayers{neuronbackbackground,neuronbackground,neuronforeground,neuronforeforeground,singleneuronbackground,singleneuronforeground}%
+\def\outneuron[#1] (#2); {%
+        \node[oneuron,#1] (#2) {};
+        \draw[statbox,ultra thin] (#2)++(.05,.025) rectangle ++(.05,.05);
+        \draw[statbox,ultra thin] (#2)++(-.025,.025) rectangle ++(.05,.05);
+        \draw[statbox,ultra thin] (#2)++(-.05,.025) rectangle ++(-.05,.05);
+        \draw[ultra thin] (#2)++(.075,.025) |- ++(-.05,-.075);
+        \draw[ultra thin] (#2)++(0,.025) -- ++(0,-.075);
+        \draw[ultra thin] (#2)++(-.075,.025) |- ++(.05,-.075);
+        \draw (#2)++(0,-.05) -- (#2.south);
+        \draw[draw,fill=white,ultra thin] (#2)++(0,-.05) circle (.025);
+	}%
+\begin{tikzpicture} [
+		neuron/.style={draw,circle,fill=white,minimum size=7,font=\small,inner sep=0pt,fill=black!20},
+		oneuron/.style={draw,rectangle,fill=black!20,minimum size=12,font=\small},
+		statbox/.style={draw,rectangle,fill=white,minimum width=25,minimum height=20},
+		every node/.style={node distance=.1},
+		anchor=center,
+        x=1.75cm,y=1.9cm,
+	]
+	\begin{pgfonlayer}{singleneuronforeground}
+		\node[draw,statbox] (leftstat) {};
+		\node[left=.08 of leftstat] (leftstatdots) {$\ldots$};
+		\node[left=.08 of leftstatdots,statbox] (midstat) {};
+		\node[left=.08 of midstat] (midstatdots) {$\ldots$};
+		\node[left=.08 of midstatdots,draw,statbox] (rightstat) {};
+
+		\node[below=.2cm of midstat,draw,circle,transform shape,fill=white] (prod) {$\Pi$};
+
+		\draw[->] (leftstat) |- (prod);
+		\draw[->] (midstat) -- (prod);
+		\draw[->] (rightstat) |- (prod);
+
+%       Draw the histograms in the big output neuron.
+		\newcommand{\barscale}{.03}
+		\fill[fill=black] (leftstat) rectangle (leftstat)[xshift=1,yshift=1] ;
+		\foreach \x / \y in {0/0, 1/1, 2/3, 3/5, 4/2, 5/0, 6/0, 7/0, 8/0, 9/0}
+			\draw[fill=black,color=black] ($(leftstat) - (5 * \barscale,.1) + (\x * \barscale,0)$) rectangle ++(\barscale, \y * \barscale);
+
+		\foreach \x / \y in {0/0, 1/0, 2/1, 3/3, 4/4, 5/3, 6/1, 7/0, 8/1, 9/0}
+			\draw[fill=black,color=black] ($(midstat) - (5 * \barscale,.1) + (\x * \barscale,0)$) rectangle ++(\barscale, \y * \barscale);
+
+		\foreach \x / \y in {0/0, 1/0, 2/0, 3/1, 4/1, 5/2, 6/2, 7/4, 8/3, 9/1}
+			\draw[fill=black,color=black] ($(rightstat) - (5 * \barscale,.1) + (\x * \barscale,0)$) rectangle ++(\barscale, \y * \barscale);
+
+		\draw[->,very thick] (leftstat) ++(0,+.4)-- (leftstat);
+		\draw[->,very thick] (midstat) ++(0,+.4)-- (midstat);
+		\draw[->,very thick] (rightstat) ++(0,+.4)-- (rightstat);
+		\draw[->,very thick] (prod) -- ++(0,-.4);
+
+	\end{pgfonlayer}
+
+	\begin{pgfonlayer}{singleneuronbackground}
+%       Big neuron Background
+		\node[fit=(leftstat) (rightstat) (prod),oneuron] (bigneuron) {};
+        \node[at=(bigneuron.east), rotate around={90:(bigneuron.east)},transform shape,font=\footnotesize,text centered,yshift=-2mm]{output neuron};
+    \end{pgfonlayer}
+
+	\begin{pgfonlayer}{neuronforeground}
+%       Draw other output neurons.
+        \foreach \x in {0,1,2,3} {
+            \node[oneuron,below left=-1 and 0.5+.9*\x of bigneuron,anchor=center] (outputneuron\x) {};
+            \draw[statbox,ultra thin] (outputneuron\x)++(.05,.025) rectangle ++(.05,.05);
+            \draw[statbox,ultra thin] (outputneuron\x)++(-.025,.025) rectangle ++(.05,.05);
+            \draw[statbox,ultra thin] (outputneuron\x)++(-.05,.025) rectangle ++(-.05,.05);
+            \draw[ultra thin] (outputneuron\x)++(.075,.025) |- ++(-.05,-.075);
+            \draw[ultra thin] (outputneuron\x)++(0,.025) -- ++(0,-.075);
+            \draw[ultra thin] (outputneuron\x)++(-.075,.025) |- ++(.05,-.075);
+            \draw (outputneuron\x)++(0,-.05) -- (outputneuron\x.south);
+            \draw[draw,fill=white,ultra thin] (outputneuron\x)++(0,-.05) circle (.025);
+
+        }
+        \foreach \x/\y in {0/1,1/2,2/3} {
+            \node at ($(outputneuron\x) !.5! (outputneuron\y)$) {$\ldots$};
+        }
+
+        \node[font=\small,anchor=north, fill=black!5, inner sep=1] at ($(outputneuron1.south) !.5! (outputneuron2.south) + (0,-.15)$)  (normalization) {divisive normalization};
+
+	\end{pgfonlayer}
+
+	\begin{pgfonlayer}{neuronbackbackground}
+		\node[rectangle,draw=black!80,fill=black!5,fit=(outputneuron0) (outputneuron3) (normalization)] (outputlayer) {};
+        \node[at=(outputlayer.west), rotate around={90:(outputlayer.west)},transform shape,font=\footnotesize,text centered,yshift=3.5mm,align=center]{output layer\\ (SC)};
+	\end{pgfonlayer}
+
+    %Sensory input.
+	\begin{pgfonlayer}{neuronforeground}
+        \foreach \x in {0,1,2,3} {
+            \node[neuron,above=1 of outputneuron\x] (inputneuron\x) {};
+            \foreach \y in {0,1,2,3} {
+                \draw[->] (inputneuron\x) -- (outputneuron\y);
+            }
+        }
+        \foreach \x/\y in {0/1,1/2,2/3} {
+            \node at ($(inputneuron\x) !.5! (inputneuron\y)$) {$\ldots$};
+        }
+    \end{pgfonlayer}
+
+    % Cognitive Input.
+	\begin{pgfonlayer}{neuronforeforeground}
+        \node[neuron,right=.5 of inputneuron0,minimum size=12,font=\tiny] (inputneuron4) {$\clLeft$};
+        \node at ($(inputneuron0) !.5! (inputneuron4)$) {$\ldots$};
+        \foreach \z\x\l in {4/5/\clCenter,5/6/\clRight,6/7/Av,7/8/aV,8/9/AV} {
+            \node[neuron,right=.1 of inputneuron\z,minimum size=13,font=\tiny,align=center] (inputneuron\x) {$\l$};
+        }
+
+    \end{pgfonlayer}
+	\begin{pgfonlayer}{neuronforeground}
+        \foreach \x in {4,5,6,7,8,9} {
+            \foreach \y in {0,1,2,3} {
+                \draw[->] (inputneuron\x) -- (outputneuron\y);
+            }
+        }
+    \end{pgfonlayer}
+
+	\begin{pgfonlayer}{neuronforeground}
+        \path[draw=black!50,fill=none] (bigneuron.north east) -- (outputneuron0.north east);
+        \path[fill=black!5,opacity=.7] 
+                (bigneuron.south west) -- (bigneuron.south east)
+                 -- (bigneuron.north east)
+                 -- (outputneuron0.north east) -- (outputneuron0.north west)
+                 -- (outputneuron0.south west) 
+                 -- cycle;
+        \path[draw=black!50,fill=none,opacity=.7] 
+                (bigneuron.south east)  -- (outputneuron0.south east) 
+                (bigneuron.south west)  -- (outputneuron0.south west) 
+                (bigneuron.north west) -- (outputneuron0.north west) 
+                (bigneuron.north east) -- (outputneuron0.north east) ;
+
+	\end{pgfonlayer}
+
+	\begin{pgfonlayer}{neuronbackbackground}
+		\node[rectangle,draw=black!80,fill=black!5,fit={($(inputneuron3) + (-.25,0)$) (inputneuron9) ($(inputneuron9) + (.25,0)$)}] (inputlayer) {};
+        \foreach \x in {0,1,2,3} {
+            \draw[->] (outputneuron\x) -- (outputneuron\x |- outputlayer.south) -- ++(0,-.1);
+        }
+        \node[at=(inputlayer.west), rotate around={90:(inputlayer.west)},transform shape,font=\footnotesize,text centered,yshift=2mm]{input layer};
+	\end{pgfonlayer}
+
+    \begin{pgfonlayer}{neuronforeground}
+        \node [at=($(inputneuron0)!.5!(inputneuron1)$), anchor=south, yshift=3mm, font=\small] (visual input) {visual};
+        \node [at=($(inputneuron2)!.5!(inputneuron3)$), anchor=south, yshift=3mm, font=\small] (auditory input) {auditory};
+        \node [at=(inputneuron5), anchor=south, yshift=3mm, font=\small] (cortical input) {spatial};
+        \node [at=(inputneuron8), anchor=south, yshift=3mm, font=\small] (cortical input) {feature};
+
+        \node [at=($(inputneuron0)!.5!(inputneuron3)$), anchor=south, yshift=8mm, color=black!60] {sensory input};
+        \node [at=($(inputneuron4)!.5!(inputneuron9)$), anchor=south, yshift=8mm, color=black!60] {attentional input};
+
+        \draw [dashed, very thick, color=black!20] ($(visual input)!.5!(auditory input)$) -- +(0,-1cm);
+        \draw [dashed, very thick, color=black!20] (cortical input-|{$(inputneuron0)!.5!(inputneuron4)$}) + (0,0.7cm) -- +(0,-1cm);
+
+    \end{pgfonlayer}
+
+\end{tikzpicture}%

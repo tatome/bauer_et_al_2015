@@ -1,0 +1,47 @@
+---
+network :
+   dim : [500, 1]
+   p : 0
+
+modalities :
+   - name : 'visual'
+     dim : [25,1]
+     activation :
+        sigma : 0.05
+        amplitude : 5
+        baseline : 3
+   - name : 'auditory'
+     dim : [25,1]
+     activation :
+        sigma : 0.06
+        amplitude : 4.375
+        baseline : 3
+
+position :
+    sigmoid_steepness : 40
+    middle_width : .05
+    sigmoid_exc : .4
+    sigmoid_scale : .9
+    sigmoid_baseline : .05
+
+class : 
+    class_scale : .9
+    class_baseline : .05
+
+simulation :
+   phases :
+       - name : 'training'
+         interactionDecay : 3000
+         initialInteractionWidth : 1.41
+         minInteractionWidth : 0.001
+         steps : 300000
+       - name : 'mapping'
+         steps : 50000
+       - name : 'spatial'
+         steps : 100
+         repetitions : 100
+       - name : 'feature'
+         steps : 100
+         repetitions : 100
+       - name : 'incongruent'
+         steps : 100000

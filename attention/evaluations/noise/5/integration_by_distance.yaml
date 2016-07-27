@@ -1,0 +1,11 @@
+VA: {akaike_crit: 0.6232464929859719}
+Va: {akaike_crit: 0.6152304609218436}
+modalities:
+- activation: {amplitude: 8, baseline: 5, sigma: 0.05}
+  dim: [25, 1]
+  name: visual
+- activation: {amplitude: 7, baseline: 5, sigma: 0.06}
+  dim: [25, 1]
+  name: auditory
+vA: {akaike_crit: 0.6392785571142284}
+va: {akaike_crit: 0.6232464929859719}

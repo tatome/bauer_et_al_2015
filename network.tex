@@ -1,0 +1,58 @@
+The structure of our network is shown in Fig.~\ref{fig:network}:
+\begin{figure}
+    \centering
+    \includetikz{tikzpictures/network-attention}
+    \caption{Our Network and Structure of Input.}\label{fig:network}
+\end{figure}
+All input neurons are modeled as part of one conceptual input layer regardless of their actual origin.
+The input layer is fully connected to the output layer.
+Neurons in the output layer self-organize to each have one preferred position of the input stimulus, and preferred stimulus positions are reflected in the network's topology.
+Each output neuron learns and maintains one histogram per input neuron which approximates the \ac{PDF} of activities of that input neuron whenever the actual stimulus position is the output neuron's preferred stimulus position.
+This mechanism is to model the assumed capability of neurons to learn the statistical relationship between input activity and decision variables \citep{yang-and-shadlen-2007,soltani-and-wang-2010}.
+Each neuron computes the likelihood of its input activity under the hypothesis that the actual stimulus position is its preferred stimulus position.
+
+Formally, let \neuron{o} be an output neuron and \neuron{i} an input neuron.
+Then \neuron{o} maintains a histogram which approximates the likelihood of different activities of \neuron{i} in case a stimulus is in \neuron{o}'s preferred location $\propv{l}_\neuron{o}$.
+Let that histogram $h_{\neuron{o},\neuron{i}}$ be represented by the counts $h_{\neuron{o},\neuron{i},1},h_{\neuron{o},\neuron{i},2},\dots,h_{\neuron{o},\neuron{i},n}$ for some large enough $n$.
+Then, given some activity $\nact{a}_\neuron{i}$ of \neuron{i}, the likelihood of that activity in case the true stimulus location $\prop{L}$ is \neuron{o}'s preferred location $\propv{l}_\neuron{o}$ is approximated by:
+\[
+    p(\nact{a}_\neuron{i}\mid\prop{L}=\propv{l}_\neuron{o}) \simeq \frac{h_{\neuron{o},\neuron{i},\lfloor\nact{a}_\neuron{i}\rfloor}}{\sum^n_{k=1}h_{\neuron{o},\neuron{i},k}}.
+\]
+Assuming uncorrelated noise in input neurons, the likelihood of a given population activity $\pact{A}=\nact{a}_{\neuron{i}_1},\nact{a}_{\neuron{i}_2},\dots,\nact{a}_{\neuron{i}_m}$ of input neurons $\neuron{i}_{1},\neuron{i}_2,\dots,\neuron{i}_m$ is
+\[
+    p(\pact{A}\mid\prop{L}=\propv{l}_\neuron{o}) \simeq \prod^m_{t=1} p(\nact{a}_{\neuron{i}_t}\mid\prop{L}=\propv{l}_\neuron{o}).
+\]
+If the locations of stimuli are uniformly distributed over the preferred locations $\propv{l}_{{\neuron{o}_1}},\propv{l}_{\neuron{o}_2},\dots,\propv{l}_{\neuron{o}_q}$ of output neurons $\neuron{o}_1,\neuron{o}_2,\dots,\neuron{o}_q$, then the probability of $\prop{L}$ being output neuron $\neuron{o}$'s preferred location $\propv{l}_{\neuron{o}}$, given input population activity $\pact{A}$ is 
+\[
+    p(\prop{L}=\propv{l}_{\neuron{o}}\mid\pact{A}) = \frac{p(\nact{A}\mid\prop{L}=\propv{l}_{\neuron{o}})}{\sum^q_{s=1}p(\nact{A}\mid\prop{L}=\propv{l}_{\neuron{o}_s})}.
+\]
+
+Thus, if we let the spontaneous output $\hat{\nact{a}}_{\neuron{o}}$ of $\neuron{o}$ in response to input population activity $\pact{A}=\nact{a}_{\neuron{i}_1},\nact{a}_{\neuron{i}_2},\dots,\nact{a}_{\neuron{i}_m}$ be 
+\[
+    \hat{\nact{a}}_{\neuron{o}} = \prod^m_{t=1} \frac{h_{\neuron{o},\neuron{i}_t,\lfloor\nact{a}_{\neuron{i}_t}\rfloor}}{\sum^n_{k=1}h_{\neuron{o},\neuron{i}_t,k}}
+\]
+and if we apply divisive normalization to get the stationary activity $\nact{a}_{\neuron{o}}$ of $\neuron{o}$:
+\[
+    \nact{a}_{\neuron{o}} = \frac{\hat{\nact{a}}_{\neuron{o}}}{\sum^q_{s=1}\hat{\nact{a}}_{\neuron{o}_q}},
+\]
+then the stationary population response approximates a \ac{PDF} over the stimulus position $\prop{L}$.
+
+In our network, the histograms are filled using self-organized learning so that they reflect the statistics of the input neurons.
+The procedure is similar to that in the original \ac{SOM} learning algorithm \citep[p.~78--83]{kohonen-1995}:
+In every learning step, the network is presented with a newly generated input activity $\pact{A}=\nact{a}_{\neuron{i}_1},\nact{a}_{\neuron{i}_2},\dots,\nact{a}_{\neuron{i}_m}$.
+That output neuron with the strongest response to the input activity is chosen as the \ac{BMU}.
+All neurons update their histograms, with the update strength decreasing with distance from the \ac{BMU} according to a function called the neighborhood interaction $f(\neuron{o},\neuron{o}')$.
+
+Specifically, let $\nact{a}_{\neuron{i}}$ be the activity of input neuron \neuron{i}, and let $\neuron{o}_{B}$ be the \ac{BMU} in learning step $u$.
+Then, for every output neuron \neuron{o} and input neuron \neuron{i}, the histogram bin $h_{\neuron{o},\neuron{i},\lfloor{\nact{a}_{i}\rfloor}}$ is updated according to the learning rule:
+\[
+    h_{\neuron{o},\neuron{i},\lfloor{\nact{a}_{i}\rfloor}} \leftarrow h_{\neuron{o},\neuron{i},\lfloor{\nact{a}_{i}\rfloor}} + \alpha_uf(\neuron{o},\neuron{o}_{B}),
+\]
+where $\alpha_u$ is the update strength in learning step $u$.
+For the neighborhood interaction function $f(\neuron{o},\neuron{o}')$, we chose a Gaussian function of the distance between the neurons $\neuron{o}$ and $\neuron{o}'$ in the network's grid:
+\[
+    f(\neuron{o}, \neuron{o}') = \exp(-\frac{d(\neuron{o},\neuron{o}')^2}{\sigma^2}),
+\]
+where $d(\neuron{o},\neuron{o}')$ is the grid distance between neurons $\neuron{o}$ and $\neuron{o}'$, and $\sigma$ is called the neighborhood interaction width.
+As training progresses, $\sigma$ decreases such that fewer and fewer neurons are substantially affected by each update.
+

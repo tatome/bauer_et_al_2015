@@ -1,0 +1,11 @@
+\usepackage{fancyhdr}
+\usepackage{datetime}
+\renewcommand{\headrulewidth}{0pt}
+\lhead{}
+\rhead{}
+\chead{\raisebox{2\baselineskip}[0pt][0pt]{\parbox{\textwidth}{\small\bf\noindent\centering DRAFT: \today\ \currenttime\\page \thepage}}}
+\cfoot{}
+\pagestyle{fancy}
+
+\newcommand{\todo}[1]{\addtocounter{footnote}{1}$^{\text{todo-\arabic{footnote}}}$\footnotetext{\small TODO: #1}}
+\newcommand{\TODO}[1]{\addtocounter{footnote}{1}[TODO-\arabic{footnote}]\footnotetext{\small TODO: #1}}%

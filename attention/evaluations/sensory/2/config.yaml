@@ -1,0 +1,23 @@
+spatial_enhancement:
+    max_dist : .01
+feature_enhancement:
+    max_dist : .01
+stimulus_selection:
+    - column_label : "$ 0.05 < \\abs{\\propv{l}_v-\\propv{l}_a} < 0.15 $"
+      min : 0.05
+      max : 0.15
+    - column_label : "$ \\abs{\\propv{l}_v-\\propv{l}_a} > 0.5 $"
+      min : 0.5
+      max : 1.0
+stimulus_selectivity:
+    strong_enhancement : 1.2
+    weak_depression : 0.8
+colors:
+    visual : "#666666"
+    auditory : "#aaaaaa"
+    both : "#111111"
+dashes:
+    visual : [4,1]
+    auditory : [null,null]
+    both : [null,null]
+font_size : 8

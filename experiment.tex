@@ -1,0 +1,330 @@
+In this paper, we extend our modeling to include top-down input in addition to bottom-up input.
+While extending the modeling, we preserve the network and algorithm.
+The goal is to test the hypothesis that the effects of attention can be explained (in part) by the same mechanisms used to model learning of multisensory integration.
+The only aspect we therefore change in our model is the nature of the input, which now is not only stimulus-driven, but also reflects higher cognitive processes.
+
+\subsection{Network Input}
+
+    \paragraph{Sensory Input}
+        The network was trained on simulated input consisting of `sensory' and `attentional' components (see Fig.~\ref{fig:network}).
+        The sensory component was in itself separated into `visual' and `auditory' parts.
+        Stimuli were defined by their location $\prop{L}\in [0,1]$ and their stimulus class $\prop{C}\in\{\mathit{Va}, \mathit{vA}, \mathit{AV}\}$.
+        The class determined the strength of the individual components.
+        Stimuli of class $\mathit{Va}$ (`visual') or $\mathit{AV}$ (`audio-visual') had strong visual components.
+        Stimuli of class $\mathit{vA}$ (`auditory') or $\mathit{AV}$ had strong auditory components.
+        Concrete realizations $\propv{l}$ and $\propv{c}$ of the stochastic variables $\prop{L}$ and $\prop{C}$ were selected randomly and uniformly distributed in every step during training.
+
+        All sensory input neurons responded to a simulated stimulus at location $\propv{l}$ according to Poisson-noisy Gaussian tuning functions:
+        Each one of the $n_\neuron{i}=\inpNeuronsPerModality$ auditory and visual input neurons $\neuron{i}_{m,k},m\in\{V,A\},k\in[1..n_\neuron{i}]$ had a preferred location
+        \[
+            \propv{l}_{\neuron{i}_{m,k}} = \frac{k-1}{n_\neuron{i}-1}.
+        \]
+        Its Gaussian tuning function was centered around this preferred location.
+        The activity $\nact{a}_{m,k}$ of $\neuron{i}_{m,k}$ in response to a stimulus of class \propv{c} at location \propv{l} was then determined by the stochastic function
+        \begin{align}\label{eq:sensory-tuning-function}
+            \nact{a_{m,k}} &\sim \Pois\left( s(m,\propv{c})\times g_m\times \exp\left(-\frac{(\propv{l}-\propv{l}_{\neuron{i}_{m,k}})^2}{\sigma_m^2}\right) + \nu_s \right),
+            \intertext{where}
+            s(m,\propv{c}) &=
+                \begin{cases}
+                    1   & \text{if } m = \mathit{V}\wedge\propv{c}\in\{\mathit{Va},\mathit{AV}\} \\
+                    1   & \text{if } m = \mathit{A} \wedge \propv{c}\in\{\mathit{vA},\mathit{AV}\} \\
+                    0.5  & \text{otherwise}.
+                \end{cases}
+        \end{align}
+        Here, $g_m$ and $\sigma_m$ are the modality-specific gain and width of the tuning functions and $\nu_s=\inpBaseline$ is the sensory background noise parameter.
+
+        The particular shape of the above tuning functions and the kind of noise is not important in the context of our model.
+        However, Gaussian tuning functions are a simple choice and realistic in that they have a central peak, and fall off with distance from the center.
+        Poisson-like noise has the property that the variance is proportional to the mean, which is true of the variability of actual neural responses \citep{tolhurst-et-al-1983,vogels-et-al-1989}.
+
+        More importantly, the gains ($g_v=\inpVisGain,g_a=\inpAudGain$) and widths ($\sigma_v=\inpVisWidth,\sigma_a=\inpAudWidth$) of the tuning functions were different in the two modalities, rendering auditory input less informative than visual input.
+        This is to model the fact that auditory localization is generally less reliable than visual information for localization \citep{alais-and-burr-2004}.
+        See Section~\ref{sec:parameters} for a discussion of the effects of different choices of parameters.
+
+        Bottom-up visual and auditory projections to the biological \ac{SC} have their origins mainly in the retina and the inferior colliculus, respectively \citep{may-2005,stein-et-al-2014}.
+        The `visual' and `auditory' subpopulations in our simulation are intended to roughly correspond to these unisensory sources of afferrents.
+
+    \paragraph{Attentional Input}
+        Apart from sensory input neurons, our model includes two types of input neurons from higher-level cognitive brain regions.
+        The first type of what we will call `attentional' input neurons encode information about the general region in which the stimulus is.
+        These three neurons code for stimuli which are on the left (\clLeft), in the middle (\clCenter), or on the right (\clRight) of the simulated visual field.
+        Another three neurons code for the type of stimulus.
+        One neuron each codes for stimuli which are highly visible (\textit{Va}), highly audible (\textit{vA}), or both (\textit{VA}).
+
+        We will call the former type `spatial' input neurons and the latter type `feature' input neurons.
+        The intuition behind these additional input neurons is that we often have an expectation of which kind of stimuli we will be presented with.
+        Often, we will expect a stimulus on the left or the right side of our visual field, and we will expect something that is very loud, or bright, or both.
+        The encoding and activation of this knowledge (mostly in cortical areas) is represented in our model in the strongly simplified form of neurons whose activity is either 1 or 0 depending on whether the location or type of the expected stimulus is the one preferred by the respective conceptual input neuron.
+
+        Like sensory input, attentional input is modeled as stochastic, modeling non-determinism of ecological conditions, cognitive processes, and neural responses.
+        More specifically, the activity of our attentional input neurons in every trial is modeled as a Bernoulli process whose parameter $p$ depends on the location and class of the stimulus.
+        The (deterministic) activation $\hat{\nact{a}}_{\clLeft}$, $\hat{\nact{a}}_{\clCenter}$, and $\hat{\nact{a}}_{\clRight}$ of the spatial input neurons $\neuron{i}_{\clLeft}$, $\neuron{i}_{\clCenter}$, and $\neuron{i}_{\clRight}$, respectively, is modeled by the three functions:
+        \begin{equation}
+            \begin{gathered}
+                \begin{aligned}
+                \hat{\nact{a}}_{\clLeft}    &=\frac{\upsilon}{1 + \exp((\propv{l} - \posLeftSigmoidMiddle)*\posSigmoidSteepness)} + \nu_c &
+                \hat{\nact{a}}_{\clRight}   &=\frac{\upsilon}{1 + \exp(-(\propv{l} - \posRightSigmoidMiddle)*\posSigmoidSteepness)} + \nu_c
+                \end{aligned} \\
+                \hat{\nact{a}}_{\clCenter}  = \exp\left(\frac{-(\propv{l} - .5)^2}{\posMiddleWidth}\right) * \upsilon + \nu_c
+            \end{gathered},
+        \end{equation}
+        where $\nu_c=\posBaseline$ and $\upsilon=\posScale$ are noise parameters.
+        These seemingly complex functions are in fact just two sigmoidal functions which have large values to the left and to the right of the interval $[0,1]$, respectively, and a Gaussian function centered around $0.5$ (see Fig.~\ref{fig:spatial-cogn-input}).
+        \begin{figure}
+            \centering
+            \includepgf{graphs/spatial_activation}
+            \caption{Activation $\hat{\nact{a}}_p$ of Attentional Input Neuron $\neuron{i}_p$ for $\mathit{p}\in\{\clLeft,\clCenter,\clRight\}$}\label{fig:spatial-cogn-input}.
+        \end{figure}
+        The activation of feature input neurons was simply $\hat{\neuron{a}}_c=1-\nu_c$ whenever the actual stimulus class was $c$ for $c\in \{aV, Av, AV\}$, and $\nu_c$ otherwise.
+        Activity of each attentional input neuron was then stochastically computed from the activation:
+        \[
+            \nact{a}_p\sim\Bern(\hat{\nact{a}}_p),\text{ for }p\in\{\clLeft,\clCenter,\clRight,aV,Av,AV\}.
+        \]
+
+        The \ac{SC} receives descending projections from various areas in the cortex~\citep{wallace-and-stein-1994,berson-1988,stein-et-al-2014,may-2005,ferraina-et-al-2002,chabot-et-al-2013}.
+        Some of those play a role in attention, like the \ac{FEF}, the \ac{DLPFC}, and the \ac{LIP} \citep{buschman-and-miller-2007,kastner-and-ungerleider-2000}.
+        In cats, the \ac{AES} plays an especially important role: Its deactivation eliminates neurophysiological multisensory integration \citep{wallace-and-stein-1994} and drastically alters audio-visual orientation behavior \citep{wilkinson-et-al-1996}.
+        It has been implicated with selective attention \citep{dehner-et-al-2004,foxe-2012}, due to its effect on neural responses in the \ac{SC}.
+        Since orienting behavior is linked to attention \citep[more recently]{kustov-and-robinson-1996,ignashchenkova-et-al-2004}, this implication is potentiated by the behavioral findings of \citet{wallace-and-stein-1994}.
+        In our model, `attentional' input may relate, for example, to \ac{FEF}, for more spatial input~\citep{bruce-et-al-1985}, or \ac{AES}, in cats, for more feature-related input \citep{dehner-et-al-2004}.
+
+    \subsection{Training}
+        We trained a network of $n_\neuron{o}=\numOutputNeurons{}$ output neurons extensively for \numStepsTraining{} training steps (according to the procedure described in Section~\ref{sec:network}).
+        Both values were chosen to be high enough to avoid artifacts like sampling error (too few neurons) or incomplete training (number of training steps).
+        Smaller values easily yielded qualitatively similar results to the ones reported in the next section.
+        The one distinct feature of our parameter setting was the minimum neighborhood width (of $\minNeighborhoodWidth{}<\frac{1}{n_\neuron{o}}$) which we chose deliberately small.
+        With a small neighborhood width, neurons which are close to each other are permitted to learn to respond to different stimuli.
+        Given that training sets up a roughly topography-preserving mapping from data space into the grid while the neighborhood interaction is still large, we expected that neurons which were close to each other would learn to respond to different special cases of similar input.
+        Specifically, we expected that they would self-organize to have similar preferred locations but different stimulus classes.
+
+\subsection{Results}
+    \subsubsection{Mapping}
+        To determine the preferred location of each neuron, we simulated input at \numStepsMapping{} positions, evenly spaced across the interval $[0,1]$.
+        At each location, we generated input for each stimulus class, and determined the \ac{BMU} in response to that input.
+        For each neuron \neuron{o} which had been \ac{BMU} for input at locations $\{\propv{l}_1,\propv{l}_2,\dots\propv{l}_k\}= L$, we chose the median of $L$ as the empirical preferred value of \neuron{o}.
+        We chose the number of $\numStepsMapping=\numStepsMappingPerNeuron*n_\neuron{o}$ to be sure that that median was representative of the preferred location of each neuron.
+        See Fig.~\ref{fig:mapping} for the resultant mapping from neurons to locations.
+        To read out decisions of the network given sensory and attentional input in our experiments, we determined the \ac{BMU} and applied the mapping generated as described above.
+        \begin{figure}
+            \centering
+            \includepgf{graphs/mapping}
+            \caption{Mapping of Neurons to Stimulus Positions.}\label{fig:mapping}
+        \end{figure}
+
+    \newcommand{\coloredbox}[1]{\textcolor[HTML]{#1}{\rule{1.5ex}{1.5ex}}}
+    \subsubsection{Enhancement}\label{sec:exp-enhancement}
+        Spatial attention can enhance the activity of \ac{SC} neurons whose receptive fields overlap the attended region \citep{goldberg-and-wurtz-1972b,ignashchenkova-et-al-2004}.%
+        To demonstrate similar behavior in our network, we divided the mean activity of each neuron for trials in which `attentional' input signaled a stimulus of spatial class \clLeft{} by the mean activity of that same neuron with zero attentional input (and the same for \clCenter{} and \clRight).
+        Fig.~\ref{fig:spatial-enhancement} shows that activating the neurons coding for \clLeft, \clCenter, and \clRight{} clearly enhanced mean activity in those neurons whose preferred values were in the respective region.
+        \begin{figure}
+            \centering
+            \includepgf{graphs/enhancement_spatial}
+            \caption[.]{Effect of Spatial Attention on Neural Responses.\\
+                Average activation of neurons given attentional input coding for spatial classes \clLeft{}~(\textcolor[HTML]{AAAAAA}{\rule{1.5ex}{1.5ex}}), \clCenter~(\textcolor[HTML]{111111}{\rule{1.5ex}{1.5ex}}), \clRight~(\textcolor[HTML]{666666}{\rule{1.5ex}{1.5ex}}) divided by average activation given zero attentional input.
+            }\label{fig:spatial-enhancement}
+        \end{figure}
+
+        In contrast to spatial attention, feature-based attention enhances activity of neurons selective to the features attended to across the visual field \citep{born-et-al-2012,maunsell-and-treue-2006}.
+        We tested whether this was also true for our network by simulating multisensory input at \numStepsSpatial{} regular positions between 0 and 1.
+        For each of these positions, we generated \numRepsSpatial{} sensory input and corresponding spatial activations which we combined once with feature activations coding for each of the stimulus classes  $\propv{c}\in\{\prop{aV},\prop{Av},\prop{AV}\}$ and for no stimulus class ($\prop{av}$), respectively.
+        From the network's output activation, we computed enhancement for each of the stimulus classes:
+        For each output neuron $\neuron{o}$, we selected those cases where the difference between the actual stimulus location $\propv{l}$ and \neuron{o}'s empirical preferred value $\propv{l}_\neuron{o}$ was within $\pm\evalSpatialEnhancementMaxDist$.
+        For each stimulus class, we divided the neuron's mean activity in cases where the attentional activity coded for that class by the mean activity in cases where the attentional activity did not code for any stimulus class.
+        See the top graph in Fig.~\ref{fig:feature-enhancement} for plots of enhancement for each of the stimulus classes.
+        \begin{figure}
+            \centering
+            \includetikz{tikzpictures/enhancement_feature}
+            \begin{legend}{Feature Selectivity.}{fig:feature-enhancement}
+                \textbf{Top:} Average activation of neurons given \emph{attentional} input coding for stimulus classes \textit{Va}~(\coloredbox{\Vacolor}, dashed), \textit{vA}~(\coloredbox{\vAcolor}), \textit{VA}~(\coloredbox{\VAcolor}) divided by average activation given zero attentional input.\\
+                \textbf{Bottom:} Average activation of neurons given \textit{Va}~(\coloredbox{\Vacolor}, dashed), \textit{vA}~(\coloredbox{\vAcolor}), \textit{VA}~(\coloredbox{\VAcolor}) \emph{sensory} input divided by average activation given \textit{va} input.%
+            \end{legend}
+        \end{figure}
+        We can see that neurons specialized in \emph{attentional} input coding for different stimulus classes.
+
+    \subsubsection{Stimulus Selectivity}
+        To test whether neurons also specialized in different types of \emph{sensory} input, and whether they generally specialized in the same kind of sensory and attentional input, we evaluated for each neuron the enhancement of activity due to \textit{Va}, \textit{vA}, and \textit{VA} \emph{sensory input} compared to $av$ sensory input.
+        Specifically, we divided, for each neuron, the mean activity given \textit{Va}, \textit{vA}, and \textit{VA} sensory input by the mean activity given $av$ input (when the stimulus was close to their preferred stimulus position, using the input and output activities generated to compute selectivity for \emph{attentional} input, see Section~\ref{sec:exp-enhancement}, second part).
+
+        The bottom graph in Fig.~\ref{fig:feature-enhancement} shows the result:
+        We see, again, that neurons specialized in different kinds of input---this time, in different kinds of \emph{sensory} input.
+        A comparison of the two graphs in Fig.~\ref{fig:feature-enhancement} also suggests that the same neurons were generally selective for sensory input from one combination of modalities and for attentional input coding for such a stimulus.
+        Especially, neurons selective for \textit{VA} stimuli were also selective for the corresponding attentional input.
+        Note also that some neurons' responses were depressed by attentional activation coding for their non-preferred stimulus combination (values $<1$).
+
+        Since the same is a bit hard to see for \textit{Va} and \textit{vA} stimuli, in Fig.~\ref{fig:feature-enhancement}, the relationship between responsiveness to each combination of modalities and attentional enhancement is plotted in Fig.~\ref{fig:feature-by-sensory}.
+        What the figures show is that neurons which responded strongly to \textit{Va} stimuli also tended to have their response enhanced by attentional input coding for \textit{Va} input.
+        More strikingly, their response was depressed by attentional \textit{vA} input.
+            
+        \begin{figure}
+		    \includetikz{tikzpictures/enhancement_cognitive_by_sensory}
+            \begin{legend}{Effect of Feature-based Attention related to Sensory Selectivity.}{fig:feature-by-sensory}
+                \textbf{X-Axis}: mean response to \emph{sensory} input of class \textit{Va}~(\coloredbox{\Vacolor}, dashed), \textit{vA}~(\coloredbox{\vAcolor}), \textit{VA}~(\coloredbox{\VAcolor}), respectively, divided by mean response to $va$ input, for each neuron.\\
+                \textbf{Y-Axis}: mean response to \emph{attentional} input of class \textit{Va}, \textit{vA}, \textit{VA}, respectively, divided by mean response to $va$ input, for each neuron.\\
+                Smoothed for legibility (simple 10-step moving average).
+            \end{legend}
+        \end{figure}
+
+
+	\subsubsection{Localization}\label{sec:attn-and-localization}
+		Having tested the effect of attention on the network's activity, we next tested how this effect was reflected in decisions made using the network's responses.
+        To do that, we simulated input in which the visual and auditory component had different locations $\propv{l}_v$ and $\propv{l}_a$, respectively.
+        Both components were strong uni-sensory components ($c=\propv{AV}$), but each sensory component was combined once with attentional input coding for each of the simulus classes and for no stimulus class.
+        Using the empirical mapping of neurons to positions, we then derived a localization of the incongruent input.
+
+		Fig.~\ref{fig:feature-based-stimulus-selection} shows the distribution of relative localizations made by the network depending on the stimulus class represented by the feature-encoding input neurons.
+        The individual graphs show histograms of the localization $l_n$ of incongruent cross-modal stimuli, that is, cross-modal stimuli in which $\propv{l}_v\neq\propv{l}_a$, relative to the location of visual and auditory sub-stimuli $\propv{l}_v$ and $\propv{l}_a$, depending on the absolute distance $\abs{\propv{l}_v-\propv{l}_a}$.
+        \begin{figure}
+            \centering
+                \includetikz{tikzpictures/integration_by_distance}
+                \begin{legend}{Integration vs.\ Decision by Relative Stimulus Distance.}{fig:feature-based-stimulus-selection}
+                    \textbf{Gray scale:} Frequency of relative localizations between visual ($l_v$) and auditory ($l_a$) sub-stimulus, depending on distance between $l_v$ and $l_a$, given different attentional input.
+                    The values in each of the columns were normalized by dividing them by the maximum value in that column to improve legibility (darker: more frequent).
+                    \textbf{White lines:} Mean relative localization.%
+                \end{legend}
+		\end{figure}
+        We see that attentional input coding for the stimulus class influences localization of incongruent audio-visual stimuli:
+        At larger distances, visibly more stimuli were localized close to the auditory sub-stimulus if attentional content coded for an $\mathit{vA}$ stimulus than in other conditions.
+        Also, already at lower inter-stimulus distances, the mean of localizations in that condition is closer to the auditory stimulus.
+        With attentional input coding for a $\mathit{Va}$ stimulus, less stimuli were localized close to the auditory stimulus at large distances, and on average localizations were shifted towards the visual stimulus, compared to the other conditions.
+
+        Finally, to test whether spatial attention affected localization, we simulated incongruent audio-visual stimuli paired with spatial attention:
+        In $\numStepsIncongruentSpatial$ steps, we simulated a visual stimulus in the left third of the interval $[0,1]$ and an auditory stimulus in the right third.
+        We then combined the sensory input with attentional input coding for each combination of each of the spatial classes $\clLeft$, and $\clRight$, and each of the stimulus classes $\mathit{Va}$, $\mathit{vA}$, $\mathit{VA}$, and $\mathit{va}$.
+        After that, visual and auditory stimulus positions were switched, in every step, and combined with attentional input as above, giving us a total of $\numStepsIncongruentSpatialFull$ input activations.
+        We found that the network localized the combined stimuli on average at a position of $\attentionAttnOnVis$, relative to the interval $[l_v,l_a]$, as above, when spatial attention was on the side of the visual stimulus and $\attentionAttnOnAud$ when it was on the side of the auditory stimulus.
+        This means that spatial attention had a sizable effect on localization.
+
+        
+    \subsubsection{Parameters}\label{sec:parameters}
+        \begin{table}
+            \centering
+            \begin{subtable}{\textwidth}
+                \centering
+                \small%
+                \input{diptable-gains}
+                \caption{Alternative Relative Sensory Gains $g_v,g_a$}
+                \label{tab:rel-sens-gains}
+            \end{subtable}
+            \begin{subtable}{\textwidth}
+                \centering
+                \small%
+                \input{diptable-sens}
+                \caption{Scaled Sensory Gains $g_v,g_a$}
+                \label{tab:scaled-sens-gains}
+            \end{subtable}
+            \begin{subtable}{\textwidth}
+                \centering
+                \small%
+                \input{diptable}
+                \caption{Alternative Baseline Noise Levels $\nu_s$}
+                \label{tab:different-noise-parameters}
+            \end{subtable}
+            \begin{legend}{Comparison of Alternative Parameter Settings}{tab:attn-alternative-params}
+                Changing baseline noise levels and sensory gains affected the maximum distance at which stimuli were integrated and how strongly localization was influenced by attentional input.
+                $a_c, c\in\{\mathit{Va},\mathit{vA},\mathit{VA},\mathit{va}\}$: the least distance at which Akaike's information criterion was in favor of a stimulus selection model given attentional input of class $c$.
+                $\mu_c, c\in\{\mathit{Va},\mathit{vA},\mathit{VA},\mathit{va}\}$: mean of all relative localizations given $c$ (analogous to y-axes in Fig.~\ref{fig:feature-based-stimulus-selection}).
+                \textbf{Bold rows:} same parameters as in the rest of the paper.
+            \end{legend}%
+        \end{table}
+
+        All effects discussed in the next section were qualitatively robust under broad ranges of parameter settings.
+        However, we did observe interesting quantitative effects due to tuning function parameters, which determined the information available for localization:
+        Information increased with lower background noise $\nu_s$ and greater gains $g_a, g_v$ (Eq.~\ref{eq:sensory-tuning-function}).
+
+        We ran experiments in which either the relative size of the sensory gains $g_a,g_v$ was manipulated (Table~\ref{tab:rel-sens-gains}), they were jointly scaled, (Table~\ref{tab:scaled-sens-gains}), or the baseline noise parameter $\nu_s$ was manipulated (Table~\ref{tab:different-noise-parameters}).
+        For each experiment, we then computed the mean localizations given incongruent sensory and varying attentional input relative to the interval $[l_v,l_a]$, as in Sec.~\ref{sec:attn-and-localization} (columns $\mu_\mathit{Va}$, $\mu_\mathit{vA}$, $\mu_\mathit{VA}$, $\mu_\mathit{va}$ in Table~\ref{tab:attn-alternative-params}).
+        We also fitted two models to the distributions of relative localizations at different absolute distances $\abs{l_a-l_v}$:
+        One model was a simple Gaussian model, while the second was a mixture of two Gaussians whose respective modes were at the location of the visual stimulus, $l_v$, and the auditory stimulus, $l_a$.
+        Thus, the first was an integration model, while the other was a stimulus selection model.
+        We then used \ac{AIC} \citep{akaike-1974,deleeuw-1992} to determine the least distance $\abs{l_a-l_v}$ at which the stimulus selection model described the distribution of localizations better than the integration model (columns $a_\mathit{Va}$, $a_\mathit{vA}$, $a_\mathit{VA}$, $a_\mathit{va}$ in subtables of Table~\ref{tab:attn-alternative-params}).%
+
+        Unsurprisingly, more information in the visual or less in the auditory modality (larger gain $g_v$, lower gain $g_a$) caused localizations to generally move towards the visual stimulus in incongruent conditions (see Table~\ref{tab:rel-sens-gains}).
+        More interestingly, the amount of sensory information was reflected in the maximum distance at which stimuli were integrated:
+        What we can see in Tables \ref{tab:scaled-sens-gains} and \ref{tab:different-noise-parameters} is a tendency for the mean of localizations to move towards the visual stimulus in $\mathit{Va}$ conditions and towards the auditory stimulus in $\mathit{vA}$ conditions with \emph{less} sensory information (columns $\mu_\mathit{Va}$, $\mu_\mathit{vA}$ in Tables \ref{tab:scaled-sens-gains} and \ref{tab:different-noise-parameters}).
+        Also, the network tends to stop integrating and start selecting one of the sub-stimuli earlier with less sensory information (strong background noise $\nu_s$, low sensory gains $g_v$, $g_a$) than with more sensory information (smaller values in columns $a_\mathit{Va}$, $a_\mathit{vA}$, $a_\mathit{VA}$, $a_\mathit{va}$).
+
+        Unfortunately, as we can see, it is hard to make out a consistent pattern in the relationship between the amount of sensory information, attentional input, and integration versus stimulus selection.
+        While there are appreciable differences between the columns $a_\mathit{Va}$, $a_\mathit{vA}$, $a_\mathit{VA}$, and $a_\mathit{va}$ of Tables~\ref{tab:scaled-sens-gains} and \ref{tab:different-noise-parameters}, these differences do not coherently point into one direction.
+        To be able to make a statement about the effect of sensory information on that of attentional input on integration and stimulus selection, many more simulations would be necessary.
+        Additionally, a statistic different from the one used here, the minimum distance between $l_v$ and $l_a$ at which \ac{AIC} favors the stimulus selection model, may be more appropriate for our purposes.
+        Since the focus of this study is more on qualitative effects of attention than on quantitative differences with varying parameter settings, we leave these aspects for future work.
+
+\subsection{Discussion}
+    Figs.~\ref{fig:feature-enhancement} and \ref{fig:feature-by-sensory} show clearly that some neurons reacted much more strongly to attentional and sensory input related to one stimulus class than others.
+    As can be seen in Fig.~\ref{fig:feature-enhancement}, neurons whose activity was strongly enhanced by \textit{Va}-class stimuli were different from those whose enhancement for \textit{vA}-class stimuli was strong, and vice-versa.
+    This enhancement was reflected in the decision made by the network:
+    Attentional input coding for a \textit{vA} stimulus led to substantially more localizations close to the auditory sub-stimulus than attentional input coding for any other stimulus class.
+    This can be seen in Fig.~\ref{fig:feature-based-stimulus-selection}, where the upper `arm' of the distribution at greater inter-stimulus distances has visibly more weight for attentional \textit{vA} input, and in the mean of localizations, which is closer to the visual stimulus at all distances (see also columns $\mu_\mathit{Va}$, $\mu_\mathit{vA}$, $\mu_\mathit{VA}, \mu_\mathit{va}$ in Table~\ref{tab:attn-alternative-params}). 
+    
+    We relate these effects to those of feature-based attention:
+    Attention focused on the visual features of an object enhances the activity of neurons across the visual field in whose receptive fields is a stimulus with the attended features if they are sensitive to those features.
+    On the behavioral side, attending to certain stimulus features will increase detection of objects with these features~\citep{maunsell-and-treue-2006,andersen-et-al-2009,born-et-al-2012}.
+    Similarly, activating the attentional content coding for a stimulus with high auditory and low visual salience enhanced the activity of specific neurons in our network and it increased the likelihood for the network to choose the location of the auditory sub-stimulus over that of the visual sub-stimulus.
+
+    Moreover, like in the experiments by \citet{warren-et-al-1981} and \citet{jack-and-thurlow-1973}, semantic content changed the extent to which stimuli in different modalities were integrated:
+    Depending on the type of stimulus cognitive content coded for, the localization of cross-sensory stimuli was shifted towards the visual component, towards the auditory component, or in between.
+    This is reflected in the mean relative localizations under the different conditions, visualized in Fig.~\ref{fig:feature-based-stimulus-selection}, and in the respective columns in Table~\ref{tab:attn-alternative-params}.
+
+    Mechanistically, the effects described above emerge because competitive learning leads to specialization among neurons such that different neurons react to different stimuli.
+    Each neuron specializes in stimuli from a specific position in simulated space, and, to varying extent, to a specific stimulus combination.
+    \ac{SOM}-style self-organization tries to embed the topology of data space into the network's grid.
+    Since data space is two-dimensional (stimulus position versus stimulus type) but the grid only has one dimension, this cannot succeed completely.
+    One of the dimensions---generally the one describing less variance in the data---would have been ignored by the network if we had kept the neighborhood size during learning above a certain threshold.
+    Intentionally decreasing the neighborhood size to a very small number allowed the network to have some non-monotonicity in the mapping (see Fig.~\ref{fig:mapping}), as it were, an effect similar to what \citet[p.~87~\emph{f}]{kohonen-1995} calls `zebra stripes.'
+
+    \citet[p.~62~\emph{f}]{miikkulainen-et-al-2005} call this effect `folding' and they showed how it can produce structures resembling ocular dominance stripes or stripes of neurons selective for different stimulus orientations in the visual cortex.
+    Ocular dominance stripes are also present naturally in the \acp{SC} of monkeys~\citep{pollack-and-hickey-1979} and they have been shown to arise in the tecta of tadpoles when they are implanted with a third eye~\citep{law-and-constantine-paton-1981}.
+    In our context, multiple neurons came to code for the same location, but combined with a different stimulus class.
+
+    Specialization of neurons not only in stimuli from some direction but also of a certain stimulus class implements an important feature of natural multisensory integration.
+    \citet{wallace-and-stein-1996} have found that not all \ac{SC} neurons react to stimuli in all or even more than one sensory modality.
+    This has been modeled computationally by \citet{colonius-and-diederich-2004} who make a normative argument for why there are uni-sensory neurons in the \ac{SC}.
+    That argument goes along the lines that a neuron which uses only evidence from one sensory modality to decide whether a stimulus is in its receptive field is not affected by noise in any other modality.
+    Our model produces such a specialization, as can be seen in Figs.~\ref{fig:feature-enhancement} and~\ref{fig:feature-by-sensory}, and it makes this argument more specific:
+    According to our account, a mixture of uni-sensory and multisensory neurons effectively evaluates hypotheses about stimulus combinations and stimulus locations.
+    It then chooses that stimulus combination and location which is most consistent with the evidence.
+    In this context, cognitive content (attention) can either be seen as additional evidence or, equivalently, as a prior over stimulus locations and combinations.
+
+    Together, these findings show that attentional input to the \ac{SC} needs no different wiring from that of sensory input to have the neurophysiological and behavioral effects seen in experiments, which is the main result of this paper.
+    Of course, this does not preclude the possibility that goal-directed learning may play a role.
+    \citet{weber-and-triesch-2009b} have shown how essentially unsupervised learning can be extended and combined with mechanisms from reinforcement learning to emphasize learning of goal-relevant over goal-irrelevant features.
+    Similarly, if there is a goal-directed feedback signal to the \ac{SC}, that feedback signal could modulate the unsupervised training process.
+    What we show here is that in our model neither feedback is needed to produce the neurophysiological and behavioral effects shown here, nor do projections from different sources of input need to be treated differently in the overall architecture or in how they are treated by integrative \ac{SC} neurons.
+
+    Our model fits in well with the view recently expressed by \citet{krauzlis-et-al-2014} that attention may be not so much a mechanism \emph{causing} certain behavioral and neural phenomena, but an effect \emph{emerging} from the need for effective information processing.
+    \citet{krauzlis-et-al-2014} argue that for example the \ac{SC} is involved in regulating spatial attention behaviorally, but neural activity related to selective attention in visual cortex remains after collicular deactivation.
+    Furthermore, even animals without a well-developed neocortex or even \ac{SC} show signs of selective attention.
+    Since no single brain region or circuit seems necessary for an organism to exhibit behavioral effects of attention, \citet{krauzlis-et-al-2014} argue that attention and its known neural correlates emerge simply because effective biological (and artificial) information processing requires state estimation.
+    The estimated state at any point then modulates action and perception.
+    We would add that zooming into loci which seemingly evolved to implement state estimation, like the \ac{SC}, may show that, there again, attention is not an inbuilt mechanism but an emergent effect resulting from neurons using all available information to accomplish their function in the best possible way.
+    
+    A prediction of our model is the existence of neurons whose activity is \emph{depressed} by a strong stimulus in their non-preferred modality, even if that stimulus is in their receptive field.
+    This effect has not been observed experimentally, to our knowledge.
+    We see a number of possible reasons for this:
+    First, depression has not been studied as extensively as enhancement.
+    Second, it is hard to precisely determine the best stimulus location of a neuron and thus to tell with any confidence whether the (perceived) location of an auditory stimulus is exactly at the same location as the visual stimulus.
+    This is especially true for a neuron which does not respond strongly to an auditory stimulus to begin with.
+    Third, it might be that ecologically sensory noise is so great relative to sensory information that depression vanishes or at least becomes hard to detect (see Section~\ref{sec:parameters}).
+    In that case, depression due to congruent stimuli in a non-preferred modality would be more likely to develop under unusually noiseless conditions.
+    Finally, it may just be that the neural implementation does not permit this kind of depression.
+    If sensory noise typically is high relative to sensory information, then that depression would be weak and therefore its behavioral benefits could become negligible.
+    In that case, it could be economical to completely prune connections to input neurons from the non-preferred modality, thereby eliminating the small amount of depression that would be there otherwise.
+
+    We have tested our model under a range of parameters, manipulating the amount of information in the simulated input on the location of the stimulus.
+    We found that the network stopped integrating incongruent cross-sensory stimuli at greater inter-stimulus distances when trained and tested with \emph{more} sensory information than with \emph{less} sensory information.
+    Our explanation for this behavior is that an output neuron \neuron{o} which had learned that strong activity of some input neuron \neuron{i} almost always indicated a stimulus close to \neuron{i}'s preferred location did not as easily discount \neuron{i}'s strong activity in the incongruent condition as noise as did neurons which had learned that the difference between driven and spontaneous input activity was low.
+    For a better intuition, imagine looking for a police car in a very crowded street.
+    If you know there are many cars that look similar to a police car and many sounds that are similar to a police car siren, then you will be more inclined to ignore parts of auditory or visual information and focus on stimuli which are overall more salient, or more in line with your expectation, than if there is only one police-car-like object and only one sound that may be a siren.
+
+    We present our model as a model of the \ac{SC}.
+    As we have demonstrated in the previous sections, it reproduces the convergence of primary and secondary sensory information in that brain region, the \ac{SC}'s topographic organization, and its unsupervised adaptation to stimulus statistics.
+    Also, we have previously~\citep{bauer-et-al-2014} shown that it can reproduce the spatial principle and the principle of inverse effectiveness, as well as \ac{MLE}-like behavioral multisensory integration which is presumably caused by the neural processes in the \ac{SC}.
+    The \ac{SC} is \emph{one} multisensory region in the brain, whose input-output behavior is particularly well understood, and knowledge we glean about it can inform research on others \citep{stein-2012}.
+    Thus, one might wonder whether our model of the \ac{SC} also fits some of the other cases of multisensory integration.
+
+    On the one hand, there are other brain regions which perform \ac{MSI} more or less similar to the \ac{SC}, like parts of \ac{AES}~\citep{stein-and-stanford-2008}, which are visual, auditory, and somatosensory; \ac{MSTd}, in which vestibular and visual cues converge~\citep{duffy-1998}; and, sub-cortically, regions in putamen, in which there is somatosensory and visual convergence~\citep{graziano-and-gross-1993}.
+    On the other hand, \ac{MSI} in these brain regions differs from that in \ac{SC} in some respects.
+    For example, the organizing principle of \ac{AES} is much more specificity to modalities and much less retinotopy than in \ac{SC} \citep{olson-and-graybiel-1987,clarey-and-irvine-1990,meredith-2004,dehner-et-al-2004}.
+    Also, superadditivity does at least not seem to be as common in \ac{MSTd} as in \ac{SC} (although that might be due to the stimuli used in related studies of the two regions)~\citep{morgan-et-al-2008}.
+    Therefore, it could be a fruitful effort to study in detail which aspects of our model apply to other multisensory brain regions than the \ac{SC}.
+    In particular, it would be very interesting to see which \emph{changes} to our model would be necessary, since these might point to important differences between the neural input to the \ac{SC} and that to other brain regions, or to mechanisms which are at work in \ac{SC} but not elsewere, and vice-versa.

@@ -1,0 +1,24 @@
+Natural \ac{MSI} is an area of research which is as intriguing as it is broad.
+\ac{MSI} is such an important part of sensory processing that it is present in virtually all organisms possessing multiple means of perception \citep{stein-and-meredith-1993}.
+Just how constitutive it is for our perception of the world is apparent from the curious effects which arise in the (rare) cases when it goes wrong, like the ventriloquism or the McGurk effects \citep{chen-and-vroomen-2013,mcgurk-and-macdonald-1976}.
+There are many aspects of \ac{MSI} which can be studied, and many levels at which they can be studied:
+\ac{MSI} can be studied in different species; involving different sensory modalities and different stimuli; in the time domain or in the spatial domain; on the physical, behavioral, or neural level; how it develops ontogenetically and phylogenetically; how it can be modeled and understood physiologically, mathematically, or algorithmically; how it behaves in isolation or in relation to higher cognitive functions.
+
+Focussing on sensory input, we have recently presented a model of learning \ac{MSI} in the \ac{SC} which is based on the \ac{SOM} algorithm \citep{bauer-and-wermter-2013,bauer-et-al-2014}.
+In that model, neurons learn the firing statistics of each of their input neurons and use these statistics to approximately compute and encode the probability of a stimulus being in their receptive field.
+The output of the network is a population-coded approximation of a \ac{PDF} for the position of a stimulus.
+We have shown \citep{bauer-and-wermter-2013b,bauer-et-al-2014} that this model reproduces important aspects of natural \ac{MSI}, namely the spatial principle, the principle of inverse effectiveness, and so-called optimal multisensory integration \citep{meredith-and-stein-1986,king-2013,stein-and-stanford-2008,alais-and-burr-2004}.
+
+Like other models of the \ac{SC} (or comparable \ac{MSI}) \citep{ohshiro-et-al-2011,fetsch-et-al-2013,deneve-et-al-2001,beck-et-al-2008,ursino-et-al-2009}, ours has so far been purely stimulus-driven.
+The models due to \citet{anastasio-and-patton-2003}, \citet{martin-et-al-2009}, \citet{pavlou-and-casey-2010}, \citet{rowland-et-al-2007}, and \citet{cuppini-et-al-2012} do include projections from cortical areas to the \ac{SC}.
+However, both \citet{anastasio-and-patton-2003} and \citet{martin-et-al-2009} have modeled \emph{only} the effect of cortical input on multisensory enhancement in the \ac{SC}, leaving aside the topographic organization which is characteristic of \ac{SC} neurons' \acp{RF}~\citep{sparks-1988,wallace-and-stein-1996,king-2013}.
+The models put forward by \citet{rowland-et-al-2007} and \citet{cuppini-et-al-2012}, while modeling the effect of cortical input on multisensory integration in the \ac{SC}, focus on replicating biology and refrain from interpreting the meaning of cortical input, network connectivity, and neural computations, functionally.
+
+Our model was specifically developed with functionality and mathematical interpretation in mind:
+In our model of the \ac{SC}, a self-organizing network learns a latent-variable model which it uses to infer the location of a stimulus from noisy, population-coded input.
+Its output approximates a population-coded \ac{PDF} over that location.
+In this paper, we extend that model from a stimulus-driven model to one which also considers attentional input:
+Specifically, we test the idea that effects of spatial and feature-based attention are based on very similar mechanisms \citep{maunsell-and-treue-2006}.
+In fact, we model attentional input as just another source of input, indistinguishable to \ac{SC} neurons from sensory input.
+We show that statistical self-organization, the basic mechanism of our \ac{ANN} model, produces effects very similar to those of natural spatial and feature-based attention observed \emph{in vivo}.
+It also naturally produces specialization to different stimulus combinations in \ac{SC} neurons \citep{wallace-and-stein-1996,stein-2012}, a feature which has been interpreted in mathematical terms by \citet{colonius-and-diederich-2004} but whose development has not been modeled, to our knowledge.

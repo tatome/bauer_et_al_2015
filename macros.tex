@@ -1,0 +1,10 @@
+\newenvironment{legend}[2]{%
+\pgfkeys{
+		/longcaptions/cptn/.store in=\actualcaption,
+		/longcaptions/cptn={#1},
+		/longcaptions/label/.store in=\longcaptionlabel,
+		/longcaptions/label={#2}
+}%
+\vspace{\baselineskip}
+
+\begin{minipage}{\linewidth-2ex}}{\end{minipage}\caption{\actualcaption}\label{\longcaptionlabel}}

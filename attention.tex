@@ -1,0 +1,54 @@
+\documentclass[a4paper]{elsarticle}
+\input{preamble}
+\title{Attention Modeled as Information in Learning Multisensory Integration}
+\begin{document}
+
+    % Address information 
+    \author[uhh]{Johannes Bauer\corref{cor1}}
+    \ead{bauer@informatik.uni-hamburg.de}
+
+    \author[uhh]{Sven Magg}
+    \ead{magg@informatik.uni-hamburg.de}
+
+    \author[uhh]{Stefan Wermter}
+    \ead{wermter@informatik.uni-hamburg.de}
+
+    \cortext[cor1]{Corresponding author. Tel~+49~40~428~83~2522}
+    \address[uhh]{University of Hamburg\\ Department of Informatics\\ Knowledge Technology, WTM\\ Vogt-K\"olln-Stra\ss{}e 30\\ 22527 Hamburg\\ Germany}
+
+
+    \begin{abstract}
+        Top-down cognitive processes affect the way bottom-up cross-sensory stimuli are integrated.
+        In this paper, we therefore extend a successful previous neural network model of learning multisensory integration in the superior colliculus (SC) by top-down, attentional input and train it on different classes of cross-modal stimuli.
+        The network not only learns to integrate cross-modal stimuli, but the model also reproduces neurons specializating in different combinations of modalities as well as behavioral and neurophysiological phenomena associated with spatial and feature-based attention.
+        Importantly, we do not provide the model with any information about which input neurons are sensory and which are attentional.
+        If the basic mechanisms of our model---self-organized learning of input statistics and divisive normalization---play a major role in the ontogenesis of the SC, then this work shows that these mechanisms suffice to explain a wide range of aspects both of bottom-up multisensory integration and the top-down influence on multisensory integration.
+
+    \end{abstract}
+
+    \begin{keyword}
+        attention\sep multisensory integration\sep superior colliculus\sep self-organization
+    \end{keyword}
+
+	\maketitle
+
+    \section{Introduction}
+        \input{introduction}
+
+    \section[The Basis of our Model: The Network]{The Basis of our Model: The Network\footnote{The full code for network, experiments, and evaluation is available as Supplementary Material.}}
+        \label{sec:network}
+        \input{network}
+
+    \section{Training and Testing the Network with Sensory and Attentional Input}
+        \input{experiment}
+
+    \section{Conclusion}
+        \input{conclusion}
+
+    \section*{Acknowledgements}
+        This work is funded in part by the DFG German Research Foundation (grant \#1247) -- International Research Training Group CINACS (Cross-modal Interactions in Natural and Artificial Cognitive Systems).   
+        
+    \section*{References}
+	\bibliographystyle{named}
+	\bibliography{bib}
+\end{document}

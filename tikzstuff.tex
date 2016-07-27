@@ -1,0 +1,33 @@
+\usepackage{tikz}
+\usetikzlibrary{calc,arrows,positioning,backgrounds,fit}
+
+% externalize included tikz pictures
+\usetikzlibrary{external}
+\tikzexternalize
+\newcommand{\includetikz}[1]{%
+	\tikzexternalenable%
+	\tikzsetfigurename{#1}%
+	\input{#1}%
+}
+\newcommand{\donotexternalize}[1]{%
+	\tikzexternaldisable%
+	\input{#1}
+}
+
+% externalize inline tikz pictures
+\newcommand{\externalize}[2]{%
+	\tikzsetfigurename{#1}%
+	#2
+}
+
+% scale pgf graphics
+\newcommand{\includepgf}[1]{%
+	\tikzexternalenable%
+	\tikzsetfigurename{#1}%
+	\begin{tikzpicture}[every node/.style={transform shape}]%
+	\node[inner sep=0pt] {%
+	\input{#1.pgf}%
+	};%
+	\end{tikzpicture}%
+}
+\newcommand{\scalepgf}[2]{\relax}
